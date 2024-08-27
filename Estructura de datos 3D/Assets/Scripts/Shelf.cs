@@ -10,10 +10,11 @@ public class Shelf : MonoBehaviour
     public GameObject ItemPrefab { get => itemPrefab; }
     public List<Sections> Sections { get => sections; set => sections = value; }
 
+    private ClientManager clientManager;
     private void Awake()
     {
-
         sections = GetComponentsInChildren<Sections>().ToList();
+        clientManager = FindObjectOfType<ClientManager>();
 
         Debug.Log("Secciones encontradas: " + sections.Count);
 
@@ -35,6 +36,16 @@ public class Shelf : MonoBehaviour
         else
         {
             Debug.LogWarning("No se han encontrado secciones para añadir items.");
+        }
+
+        NotifyClients();
+    }
+
+    private void NotifyClients()
+    {
+        if (clientManager != null)
+        {
+            clientManager.NotifyItemAdded();
         }
     }
 }

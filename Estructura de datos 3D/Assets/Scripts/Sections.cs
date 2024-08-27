@@ -66,12 +66,6 @@ public class Sections : MonoBehaviour
     {
         return stacks.Count > 0;
     }
-
-    public int GetItemCount()
-    {
-        return stacks.Count;
-    }
-
     public void RemoveItem()
     {
         GameObject itemToRemove = stacks.Pop();

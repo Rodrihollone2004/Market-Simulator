@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class ClientManager : MonoBehaviour
@@ -80,7 +81,7 @@ public class ClientManager : MonoBehaviour
             yield return new WaitForSeconds(spawnInterval);
         }
     }
-    private const int MaxClients = 10; 
+    private const int MaxClients = 10;
 
 
 
@@ -109,24 +110,17 @@ public class ClientManager : MonoBehaviour
                 continue;
             }
 
-            int sectionIndex = -1;
-            for (int i = 0; i < sections.Count; i++)
+            List<Sections> availableSections = sections.Where(section => section.HasItems()).ToList();
+
+            if (availableSections.Count == 0)
             {
-                sectionIndex = Random.Range(0, sections.Count);
-                if (sections[sectionIndex].HasItems())
-                {
-                    break;
-                }
+                // Espera hasta que se agreguen ítems nuevos
+                yield return new WaitUntil(() => sections.Any(section => section.HasItems()));
+                continue; // Vuelve a intentar mover al cliente
             }
 
-            if (sectionIndex == -1 || !sections[sectionIndex].HasItems())
-            {
-                Debug.LogWarning("No se encontraron secciones con items disponibles.");
-                yield break;
-            }
-
-
-            Transform objective = sections[sectionIndex].transform;
+            Sections selectedSection = availableSections[Random.Range(0, availableSections.Count)];
+            Transform objective = selectedSection.transform;
             float speed = 5f;
 
             while (client != null && client.activeInHierarchy && Vector3.Distance(client.transform.position, objective.position) > 0.1f && !clientScript.IsMovingToExit())
@@ -140,18 +134,15 @@ public class ClientManager : MonoBehaviour
                 yield return null;
             }
 
-
             if (clientScript != null)
             {
                 clientScript.SetExit(exitPoint);
                 StartCoroutine(clientScript.MoveToExit());
             }
 
-          
             yield return new WaitUntil(() => client == null || !client.activeInHierarchy);
 
-       
-            clients.Dequeue(); 
+            clients.Dequeue();
 
             UpdateClientPositions();
 
@@ -162,6 +153,7 @@ public class ClientManager : MonoBehaviour
             }
         }
     }
+
     private void UpdateClientPositions()
     {
         Vector3 currentPosition = spawnPoint.position;
@@ -181,10 +173,19 @@ public class ClientManager : MonoBehaviour
 
     public void NotifyClientReachedExit()
     {
-        if (!isMoving && clients.Count > 0)
+        if (clients.Count > 0 && !isMoving)
         {
             isMoving = true;
             StartCoroutine(MoveClient());
         }
     }
+    public void NotifyItemAdded()
+    {
+        if (!isMoving)
+        {
+            isMoving = true;
+            StartCoroutine(MoveClient());
+        }
+    }
+
 }
